@@ -95,6 +95,7 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 		}
 		AutoConfigurationMetadata autoConfigurationMetadata = AutoConfigurationMetadataLoader
 				.loadMetadata(this.beanClassLoader);
+		// 解析
 		AutoConfigurationEntry autoConfigurationEntry = getAutoConfigurationEntry(autoConfigurationMetadata,
 				annotationMetadata);
 		return StringUtils.toStringArray(autoConfigurationEntry.getConfigurations());
