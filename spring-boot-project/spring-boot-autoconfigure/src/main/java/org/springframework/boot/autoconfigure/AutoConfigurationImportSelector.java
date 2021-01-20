@@ -138,7 +138,15 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 		// 去掉被排除的类名
 		configurations.removeAll(exclusions);
 
+		// 过滤,这边是根据OnBeanCondition，OnClassCondition，OnWebApplicationCondition三个过滤器来过滤的
+		// 1. OnBeanCondition 对应注解@ConditionalOnBean，@ConditionalOnMissingBean，@ConditionalOnSingleCandidate
+		// 2. OnClassCondition 对应注解@ConditionalOnClass，@ConditionalOnMissingClass
+		// 3. OnWebApplicationCondition 对应注解@ConditionalOnWebApplication，@ConditionalOnNotWebApplication
+		// 但是这边不是循环遍历每个需要的类，看看是否满足Condition，这边判断的比较简单，
+		// 是根据spring-boot-autoconfigure项目下面MATE-INF下面的spring-autoconfigure-metadata.properties来判断的
+		// 判断是否存在对应的类（包括OnBeanCondition也是，因为此时还没有实例化bean）,或者服务器是否满足对应的需求
 		configurations = filter(configurations, autoConfigurationMetadata);
+
 		fireAutoConfigurationImportEvents(configurations, exclusions);
 		return new AutoConfigurationEntry(configurations, exclusions);
 	}
@@ -188,7 +196,8 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 	 * @return a list of candidate configurations
 	 */
 	protected List<String> getCandidateConfigurations(AnnotationMetadata metadata, AnnotationAttributes attributes) {
-		// 加载
+		// 调用SpringFactoriesLoader.loadFactoryNames加载
+		// key为org.springframework.boot.autoconfigure.EnableAutoConfiguration
 		List<String> configurations = SpringFactoriesLoader.loadFactoryNames(getSpringFactoriesLoaderFactoryClass(),
 				getBeanClassLoader());
 		Assert.notEmpty(configurations, "No auto configuration classes found in META-INF/spring.factories. If you "
@@ -262,8 +271,14 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 		String[] candidates = StringUtils.toStringArray(configurations);
 		boolean[] skip = new boolean[candidates.length];
 		boolean skipped = false;
+		// 获取过滤器，这边有三个
+		// 1. OnBeanCondition 对应注解@ConditionalOnBean，@ConditionalOnMissingBean，@ConditionalOnSingleCandidate
+		// 2. OnClassCondition 对应注解@ConditionalOnClass，@ConditionalOnMissingClass
+		// 3. OnWebApplicationCondition 对应注解@ConditionalOnWebApplication，@ConditionalOnNotWebApplication
 		for (AutoConfigurationImportFilter filter : getAutoConfigurationImportFilters()) {
+			// 执行各种aware
 			invokeAwareMethods(filter);
+
 			boolean[] match = filter.match(candidates, autoConfigurationMetadata);
 			for (int i = 0; i < match.length; i++) {
 				if (!match[i]) {
@@ -273,10 +288,12 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 				}
 			}
 		}
+		// skipped = false 表示当前所有bean都满足条件
 		if (!skipped) {
 			return configurations;
 		}
 		List<String> result = new ArrayList<>(candidates.length);
+		// 循环遍历，将不需要跳过的候选对象添加到result
 		for (int i = 0; i < candidates.length; i++) {
 			if (!skip[i]) {
 				result.add(candidates[i]);
@@ -436,13 +453,19 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 			if (this.autoConfigurationEntries.isEmpty()) {
 				return Collections.emptyList();
 			}
+			// 获取所有被排除的组成一个集合
 			Set<String> allExclusions = this.autoConfigurationEntries.stream()
 					.map(AutoConfigurationEntry::getExclusions).flatMap(Collection::stream).collect(Collectors.toSet());
+
+			// 获取所有导入类组成一个集合
 			Set<String> processedConfigurations = this.autoConfigurationEntries.stream()
 					.map(AutoConfigurationEntry::getConfigurations).flatMap(Collection::stream)
 					.collect(Collectors.toCollection(LinkedHashSet::new));
+
+			// 移除
 			processedConfigurations.removeAll(allExclusions);
 
+			// 组成Entry集合并且返回
 			return sortAutoConfigurations(processedConfigurations, getAutoConfigurationMetadata()).stream()
 					.map((importClassName) -> new Entry(this.entries.get(importClassName), importClassName))
 					.collect(Collectors.toList());
