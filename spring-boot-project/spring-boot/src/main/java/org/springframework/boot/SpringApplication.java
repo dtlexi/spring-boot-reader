@@ -331,10 +331,17 @@ public class SpringApplication {
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
 			// 封装环境对象
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, applicationArguments);
+			// 配置一些需要忽略的bean
 			configureIgnoreBeanInfo(environment);
+			// 初始化banner图的打印
 			Banner printedBanner = printBanner(environment);
 			// 创建ApplicationContext对象
+			// 根据当前 webApplicationType 来常见
+			// 1.servlet:AnnotationConfigServletWebServerApplicationContext
+			// 2.reactive:AnnotationConfigReactiveWebServerApplicationContext
+			// 3.default:AnnotationConfigApplicationContext
 			context = createApplicationContext();
+			// 初始化异常打印信息
 			exceptionReporters = getSpringFactoriesInstances(SpringBootExceptionReporter.class,
 					new Class[] { ConfigurableApplicationContext.class }, context);
 			prepareContext(context, environment, listeners, applicationArguments, printedBanner);
