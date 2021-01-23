@@ -64,9 +64,14 @@ import org.springframework.web.servlet.DispatcherServlet;
  * @since 2.0.0
  */
 @AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
+// 声明当前是一个配置类
 @Configuration(proxyBeanMethods = false)
+// 判断当前Servlet环境
 @ConditionalOnWebApplication(type = Type.SERVLET)
+// 判断当前项目中是否存在DispatcherServlet类
 @ConditionalOnClass(DispatcherServlet.class)
+// ServletWebServerFactoryAutoConfiguration 加载后加载当前类
+// ServletWebServerFactoryAutoConfiguration 是用来配置web服务器的
 @AutoConfigureAfter(ServletWebServerFactoryAutoConfiguration.class)
 public class DispatcherServletAutoConfiguration {
 

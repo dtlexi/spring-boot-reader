@@ -250,6 +250,7 @@ public class SpringApplication {
 	 * @see #setSources(Set)
 	 */
 	public SpringApplication(Class<?>... primarySources) {
+		// ...
 		this(null, primarySources);
 	}
 
@@ -267,10 +268,23 @@ public class SpringApplication {
 	public SpringApplication(ResourceLoader resourceLoader, Class<?>... primarySources) {
 		this.resourceLoader = resourceLoader;
 		Assert.notNull(primarySources, "PrimarySources must not be null");
+		// 配置类
 		this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
+		// 判断一下当前环境，是Servlet，还是还是Reactive（Webflux），还是原生的
+		// 其底层是判断是否能用Class.forName加载对应的类，即项目中是否存在对应的类
+		// Reactive：是否存在Reactive对应的类，并且不存在Spring mvc的类
+		// None:不存在Servlet对应的类
+		// Servlet:其他都是Servlet
 		this.webApplicationType = WebApplicationType.deduceFromClasspath();
+		// 初始化 ApplicationContextInitializer
+		// 从spring.factories中获取
 		setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));
+		// 初始化 ApplicationListener
+		// 从spring.factories中获取
 		setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
+		// 推断主构造类
+		// 通过RuntimeException，拿到方法的调用栈
+		// 找到main方法所在的那个类
 		this.mainApplicationClass = deduceMainApplicationClass();
 	}
 
@@ -296,19 +310,38 @@ public class SpringApplication {
 	 * @return a running {@link ApplicationContext}
 	 */
 	public ConfigurableApplicationContext run(String... args) {
+		// 初始化一个计数器
 		StopWatch stopWatch = new StopWatch();
+		// 启动计时器
 		stopWatch.start();
+		// ConfigurableApplicationContext
 		ConfigurableApplicationContext context = null;
 		Collection<SpringBootExceptionReporter> exceptionReporters = new ArrayList<>();
+		// 初始化正式问题
+		// 这个代码没用
 		configureHeadlessProperty();
+
+		// 从spring.factories获取SpringApplicationRunListeners
 		SpringApplicationRunListeners listeners = getRunListeners(args);
+		// 调用SpringApplicationRunListener的starting方法
+		// 表示spring boot 正在启动
 		listeners.starting();
 		try {
+			// 将命令行传递的参数构造成一个对象
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+			// 封装环境对象
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, applicationArguments);
+			// 配置一些需要忽略的bean
 			configureIgnoreBeanInfo(environment);
+			// 初始化banner图的打印
 			Banner printedBanner = printBanner(environment);
+			// 创建ApplicationContext对象
+			// 根据当前 webApplicationType 来常见
+			// 1.servlet:AnnotationConfigServletWebServerApplicationContext
+			// 2.reactive:AnnotationConfigReactiveWebServerApplicationContext
+			// 3.default:AnnotationConfigApplicationContext
 			context = createApplicationContext();
+			// 初始化异常打印信息
 			exceptionReporters = getSpringFactoriesInstances(SpringBootExceptionReporter.class,
 					new Class[] { ConfigurableApplicationContext.class }, context);
 			prepareContext(context, environment, listeners, applicationArguments, printedBanner);
@@ -1212,6 +1245,8 @@ public class SpringApplication {
 	 * @return the running {@link ApplicationContext}
 	 */
 	public static ConfigurableApplicationContext run(Class<?> primarySource, String... args) {
+		// ...
+		// primarySource 我们的配置类
 		return run(new Class<?>[] { primarySource }, args);
 	}
 
@@ -1223,6 +1258,9 @@ public class SpringApplication {
 	 * @return the running {@link ApplicationContext}
 	 */
 	public static ConfigurableApplicationContext run(Class<?>[] primarySources, String[] args) {
+		// 实例化一个SpringApplication对象
+		// 调用SpringApplication的run方法
+		// primarySources 是我们传递的主配置对象，可以传递多个，可以是一个数组
 		return new SpringApplication(primarySources).run(args);
 	}
 
