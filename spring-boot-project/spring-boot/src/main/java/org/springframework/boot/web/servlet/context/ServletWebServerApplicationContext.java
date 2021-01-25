@@ -148,8 +148,10 @@ public class ServletWebServerApplicationContext extends GenericWebApplicationCon
 
 	@Override
 	protected void onRefresh() {
+		// 调用父类的方法
 		super.onRefresh();
 		try {
+			// 创建服务器
 			createWebServer();
 		}
 		catch (Throwable ex) {
@@ -175,12 +177,18 @@ public class ServletWebServerApplicationContext extends GenericWebApplicationCon
 	private void createWebServer() {
 		WebServer webServer = this.webServer;
 		ServletContext servletContext = getServletContext();
+		// 不为空表示war包形式，不是jar包形式
 		if (webServer == null && servletContext == null) {
+			// 容器中获取 ServletWebServerFactory
 			ServletWebServerFactory factory = getWebServerFactory();
+			// 获取webServer
+			// getSelfInitializer() 方法获取的是 ServletContextInitializer
+			// 这边没有执行，执行是tomcat启动是运行的
 			this.webServer = factory.getWebServer(getSelfInitializer());
 		}
 		else if (servletContext != null) {
 			try {
+				// 调用 ServletContextInitializer 的 onStartUp方法
 				getSelfInitializer().onStartup(servletContext);
 			}
 			catch (ServletException ex) {
@@ -218,6 +226,13 @@ public class ServletWebServerApplicationContext extends GenericWebApplicationCon
 	 */
 	private org.springframework.boot.web.servlet.ServletContextInitializer getSelfInitializer() {
 		return this::selfInitialize;
+
+//		return new ServletContextInitializer() {
+//			@Override
+//			public void onStartup(ServletContext servletContext) throws ServletException {
+//				selfInitialize(servletContext);
+//			}
+//		};
 	}
 
 	private void selfInitialize(ServletContext servletContext) throws ServletException {

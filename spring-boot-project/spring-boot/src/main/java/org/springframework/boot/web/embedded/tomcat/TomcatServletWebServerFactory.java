@@ -172,12 +172,17 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 	}
 
 	@Override
+	// 获取服务
+	// ServletContextInitializer 是Spring对Servlet SPI规范的修改 ServletContainerInitializer
+	// ServletContextInitializer 最后会封装成一个ServletContainerInitializer TomcatStarter 传递给Tomcat
 	public WebServer getWebServer(ServletContextInitializer... initializers) {
 		if (this.disableMBeanRegistry) {
 			Registry.disableRegistry();
 		}
+		// 实例化 Tomcat
 		Tomcat tomcat = new Tomcat();
 		File baseDir = (this.baseDirectory != null) ? this.baseDirectory : createTempDir("tomcat");
+		// 设置tomcat 属性
 		tomcat.setBaseDir(baseDir.getAbsolutePath());
 		Connector connector = new Connector(this.protocol);
 		connector.setThrowOnFailure(true);
@@ -190,6 +195,7 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 			tomcat.getService().addConnector(additionalConnector);
 		}
 		prepareContext(tomcat.getHost(), initializers);
+		// 获取一个TomcatWebServer 对象
 		return getTomcatWebServer(tomcat);
 	}
 
@@ -238,6 +244,7 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 		ServletContextInitializer[] initializersToUse = mergeInitializers(initializers);
 		host.addChild(context);
 		configureContext(context, initializersToUse);
+		// 空方法
 		postProcessContext(context);
 	}
 
@@ -350,6 +357,7 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 	 * @param initializers initializers to apply
 	 */
 	protected void configureContext(Context context, ServletContextInitializer[] initializers) {
+		// TomcatStarter 实现了 ServletContainerInitializer
 		TomcatStarter starter = new TomcatStarter(initializers);
 		if (context instanceof TomcatEmbeddedContext) {
 			TomcatEmbeddedContext embeddedContext = (TomcatEmbeddedContext) context;

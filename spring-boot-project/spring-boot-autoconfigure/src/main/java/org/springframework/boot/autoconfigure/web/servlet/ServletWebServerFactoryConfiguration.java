@@ -65,6 +65,9 @@ class ServletWebServerFactoryConfiguration {
 
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass({ Servlet.class, Tomcat.class, UpgradeProtocol.class })
+
+	// 如果我们配置了 ServletWebServerFactory
+	// 那么spring将不会导入Tomcat
 	@ConditionalOnMissingBean(value = ServletWebServerFactory.class, search = SearchStrategy.CURRENT)
 	static class EmbeddedTomcat {
 

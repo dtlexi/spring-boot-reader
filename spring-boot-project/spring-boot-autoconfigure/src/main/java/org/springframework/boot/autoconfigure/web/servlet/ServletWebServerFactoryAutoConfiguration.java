@@ -59,10 +59,18 @@ import org.springframework.web.filter.ForwardedHeaderFilter;
 @AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
 @ConditionalOnClass(ServletRequest.class)
 @ConditionalOnWebApplication(type = Type.SERVLET)
+// 配置信息
 @EnableConfigurationProperties(ServerProperties.class)
+// 这边import的是一个数组
+// 数组是一个有序的，是按顺序导入的
+// 如果导入了EmbeddedTomcat，此时系统中已经有 TomcatServletWebServerFactory->ServletWebServerFactory
+// 此时就不会导入EmbeddedJetty或者EmbeddedUndertow了
 @Import({ ServletWebServerFactoryAutoConfiguration.BeanPostProcessorsRegistrar.class,
+		// tomcat
 		ServletWebServerFactoryConfiguration.EmbeddedTomcat.class,
+		// jetty
 		ServletWebServerFactoryConfiguration.EmbeddedJetty.class,
+		// undertow
 		ServletWebServerFactoryConfiguration.EmbeddedUndertow.class })
 public class ServletWebServerFactoryAutoConfiguration {
 

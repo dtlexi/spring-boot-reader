@@ -336,7 +336,7 @@ public class SpringApplication {
 			// 初始化banner图的打印
 			Banner printedBanner = printBanner(environment);
 			// 创建ApplicationContext对象
-			// 根据当前 webApplicationType 来常见
+			// 根据当前 webApplicationType 来反射创建ApplicationContext
 			// 1.servlet:AnnotationConfigServletWebServerApplicationContext
 			// 2.reactive:AnnotationConfigReactiveWebServerApplicationContext
 			// 3.default:AnnotationConfigApplicationContext
@@ -344,13 +344,21 @@ public class SpringApplication {
 			// 初始化异常打印信息
 			exceptionReporters = getSpringFactoriesInstances(SpringBootExceptionReporter.class,
 					new Class[] { ConfigurableApplicationContext.class }, context);
+
+			// 进行一些初始化工作
 			prepareContext(context, environment, listeners, applicationArguments, printedBanner);
+
+			// 调用refresh方法
+			// AnnotationConfigServletWebServerApplicationContext 重写了onRefresh方法
+			// 在里面启动了tomcat
 			refreshContext(context);
+			// 空方法
 			afterRefresh(context, applicationArguments);
 			stopWatch.stop();
 			if (this.logStartupInfo) {
 				new StartupInfoLogger(this.mainApplicationClass).logStarted(getApplicationLog(), stopWatch);
 			}
+			// 调用SpringApplicationRunListener started方法
 			listeners.started(context);
 			callRunners(context, applicationArguments);
 		}
@@ -398,15 +406,21 @@ public class SpringApplication {
 
 	private void prepareContext(ConfigurableApplicationContext context, ConfigurableEnvironment environment,
 			SpringApplicationRunListeners listeners, ApplicationArguments applicationArguments, Banner printedBanner) {
+		//将我们初始化的环境实在给context
 		context.setEnvironment(environment);
+		// 设置一些初始化的类
 		postProcessApplicationContext(context);
+		// 调用ApplicationContextInitializer的initialize方法
 		applyInitializers(context);
+		// 调用SpringApplicationRunListeners的contextPrepared方法
 		listeners.contextPrepared(context);
 		if (this.logStartupInfo) {
 			logStartupInfo(context.getParent() == null);
 			logStartupProfileInfo(context);
 		}
 		// Add boot specific singleton beans
+
+		// 下面设置一下对象到bean 工厂
 		ConfigurableListableBeanFactory beanFactory = context.getBeanFactory();
 		beanFactory.registerSingleton("springApplicationArguments", applicationArguments);
 		if (printedBanner != null) {
@@ -435,6 +449,9 @@ public class SpringApplication {
 				// Not allowed in some environments.
 			}
 		}
+		// 调用context.refresh()方法
+		// 这边处理web环境的是ServletWebServerApplicationContext
+		// 内部重写了refresh方法（其实就是重写了onRefresh方法）
 		refresh(context);
 	}
 
