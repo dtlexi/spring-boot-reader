@@ -194,6 +194,7 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 		for (Connector additionalConnector : this.additionalTomcatConnectors) {
 			tomcat.getService().addConnector(additionalConnector);
 		}
+		// 这边context
 		prepareContext(tomcat.getHost(), initializers);
 		// 获取一个TomcatWebServer 对象
 		return getTomcatWebServer(tomcat);
@@ -243,6 +244,8 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 		context.addLifecycleListener(new StaticResourceConfigurer(context));
 		ServletContextInitializer[] initializersToUse = mergeInitializers(initializers);
 		host.addChild(context);
+		// 将ServletContextInitializer集合封装到TomcatStarter中去，在TomcatStarter中循环执行
+		// TomcatStarter实现了ServletContainerInitializer，Servlet 3.0 的spi规范，spring在这边做了修改
 		configureContext(context, initializersToUse);
 		// 空方法
 		postProcessContext(context);
